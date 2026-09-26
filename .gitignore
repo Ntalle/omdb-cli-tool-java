@@ -1,0 +1,17 @@
+# Java
+*.class
+
+# Build output
+target/
+build/
+
+# VS Code
+.vscode/
+
+# Environment / secrets
+.env
+*.env
+
+# OS files
+.DS_Store
+Thumbs.db
