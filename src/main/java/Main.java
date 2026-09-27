@@ -60,10 +60,17 @@ public class Main {
                 return;
             }
 
-            System.out.println("Title: " + root.get("Title").asText());
-            System.out.println("Year: " + root.get("Year").asText());
-            System.out.println("Director: " + root.get("Director").asText());
-            System.out.println("IMDb Rating: " + root.get("imdbRating").asText());
+            Movie movie = new Movie(
+                root.get("Title").asText(),
+                root.get("Year").asText(),
+                root.get("Director").asText(),
+                root.get("imdbRating").asText()
+        );
+
+        System.out.println("Title: " + movie.getTitle());
+        System.out.println("Year: " + movie.getYear());
+        System.out.println("Director: " + movie.getDirector());
+        System.out.println("IMDb Rating: " + movie.getImdbRating());
 
         } catch (IOException e) {
 
