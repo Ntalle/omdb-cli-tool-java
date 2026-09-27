@@ -1,3 +1,3 @@
-# TMDB CLI Tool
+# OMDb CLI Tool
 
-A Java command-line application that uses the TMDB API to retrieve and display movie information.
+A Java command-line application that uses the OMDb API to retrieve and display movie information.
