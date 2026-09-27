@@ -1,11 +1,4 @@
 import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,51 +21,23 @@ public class Main {
         System.out.print("Enter movie title: ");
         String movieTitle = scanner.nextLine().trim();
 
-        String encodedTitle =
-                URLEncoder.encode(movieTitle, StandardCharsets.UTF_8);
-
-        String url = "https://www.omdbapi.com/?apikey="
-                + apiKey
-                + "&t="
-                + encodedTitle;
+        OmdbClient omdbClient = new OmdbClient(apiKey);
 
         try {
 
-            URI uri = URI.create(url);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .GET()
-                    .build();
-
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
-
-            HttpResponse<String> response =
-                    client.send(
-                            request,
-                            HttpResponse.BodyHandlers.ofString()
-                    );
-
-            int statusCode = response.statusCode();
-
-            if (statusCode < 200 || statusCode >= 300) {
-                System.out.println("HTTP request failed.");
-                System.out.println("Status Code: " + statusCode);
-                return;
-            }
+            String responseBody = omdbClient.searchMovie(movieTitle);
 
             ObjectMapper objectMapper = new ObjectMapper();
 
-            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode root = objectMapper.readTree(responseBody);
 
             if (root.get("Response").asText().equals("False")) {
+                
                 System.out.println("Error: " + root.get("Error").asText());
                 return;
             }
 
-            Movie movie = objectMapper.readValue(response.body(), Movie.class);
+            Movie movie = objectMapper.readValue(responseBody, Movie.class);
 
             System.out.println("Title: " + movie.getTitle());
             System.out.println("Year: " + movie.getYear());
@@ -86,7 +51,9 @@ public class Main {
 
         } catch (IOException e) {
 
-            System.out.println("Could not complete the network request.");
+            System.out.println(
+                    "Could not complete the network request."
+            );
             System.out.println("Reason: " + e.getMessage());
 
         } catch (InterruptedException e) {
