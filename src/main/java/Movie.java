@@ -1,11 +1,22 @@
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Movie {
 
-    private String title;
-    private String year;
-    private String director;
-    private String imdbRating;
+    private final String title;
+    private final String year;
+    private final String director;
+    private final String imdbRating;
 
-    public Movie(String title, String year, String director, String imdbRating) {
+    @JsonCreator
+    public Movie(
+            @JsonProperty("Title") String title,
+            @JsonProperty("Year") String year,
+            @JsonProperty("Director") String director,
+            @JsonProperty("imdbRating") String imdbRating) {
+
         this.title = title;
         this.year = year;
         this.director = director;

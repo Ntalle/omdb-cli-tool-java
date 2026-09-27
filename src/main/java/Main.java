@@ -1,12 +1,14 @@
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Scanner;
-import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,13 +45,23 @@ public class Main {
                     .GET()
                     .build();
 
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
 
             HttpResponse<String> response =
                     client.send(
                             request,
                             HttpResponse.BodyHandlers.ofString()
                     );
+
+            int statusCode = response.statusCode();
+
+            if (statusCode < 200 || statusCode >= 300) {
+                System.out.println("HTTP request failed.");
+                System.out.println("Status Code: " + statusCode);
+                return;
+            }
 
             ObjectMapper objectMapper = new ObjectMapper();
 
@@ -60,22 +72,22 @@ public class Main {
                 return;
             }
 
-            Movie movie = new Movie(
-                root.get("Title").asText(),
-                root.get("Year").asText(),
-                root.get("Director").asText(),
-                root.get("imdbRating").asText()
-        );
+            Movie movie = objectMapper.readValue(response.body(), Movie.class);
 
-        System.out.println("Title: " + movie.getTitle());
-        System.out.println("Year: " + movie.getYear());
-        System.out.println("Director: " + movie.getDirector());
-        System.out.println("IMDb Rating: " + movie.getImdbRating());
+            System.out.println("Title: " + movie.getTitle());
+            System.out.println("Year: " + movie.getYear());
+            System.out.println("Director: " + movie.getDirector());
+            System.out.println("IMDb Rating: " + movie.getImdbRating());
+
+        } catch (JsonProcessingException e) {
+
+            System.out.println("Could not process the movie data.");
+            System.out.println("Reason: " + e.getMessage());
 
         } catch (IOException e) {
 
-            System.out.println("Could not connect to OMDb.");
-            System.out.println("Please check your internet connection.");
+            System.out.println("Could not complete the network request.");
+            System.out.println("Reason: " + e.getMessage());
 
         } catch (InterruptedException e) {
 
