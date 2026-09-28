@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -45,24 +47,39 @@ public class Main {
 
             JsonNode searchResults = root.get("Search");
 
-            System.out.println("\nSearch Results:");
+            List<SearchResult> results = new ArrayList<>();
 
             for (int i = 0; i < searchResults.size(); i++) {
 
                 JsonNode result = searchResults.get(i);
 
+                SearchResult searchResult = new SearchResult(
+                        result.get("Title").asText(),
+                        result.get("Year").asText(),
+                        result.get("imdbID").asText()
+                );
+
+                results.add(searchResult);
+            }
+
+            System.out.println("\nSearch Results:");
+
+            for (int i = 0; i < results.size(); i++) {
+
+                SearchResult result = results.get(i);
+
                 System.out.println(
                         (i + 1)
                                 + ". "
-                                + result.get("Title").asText()
+                                + result.getTitle()
                                 + " ("
-                                + result.get("Year").asText()
+                                + result.getYear()
                                 + ")"
                 );
 
                 System.out.println(
                         "   IMDb ID: "
-                                + result.get("imdbID").asText()
+                                + result.getImdbId()
                 );
             }
 
@@ -71,16 +88,15 @@ public class Main {
 
             int choice = Integer.parseInt(choiceInput);
 
-            if (choice < 1 || choice > searchResults.size()) {
+            if (choice < 1 || choice > results.size()) {
                 System.out.println("Invalid movie selection.");
                 return;
             }
 
-            JsonNode selectedMovie =
-                    searchResults.get(choice - 1);
+            SearchResult selectedResult =
+                    results.get(choice - 1);
 
-            String imdbId =
-                    selectedMovie.get("imdbID").asText();
+            String imdbId = selectedResult.getImdbId();
 
             String movieResponse =
                     omdbClient.getMovieById(imdbId);
@@ -105,7 +121,9 @@ public class Main {
             System.out.println("Title: " + movie.getTitle());
             System.out.println("Year: " + movie.getYear());
             System.out.println("Director: " + movie.getDirector());
-            System.out.println("IMDb Rating: " + movie.getImdbRating());
+            System.out.println(
+                    "IMDb Rating: " + movie.getImdbRating()
+            );
 
         } catch (NumberFormatException e) {
 
