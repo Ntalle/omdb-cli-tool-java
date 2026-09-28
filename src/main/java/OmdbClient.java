@@ -6,11 +6,18 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class OmdbClient {
 
     private final String apiKey;
     private final HttpClient client;
+    private final ObjectMapper objectMapper;
 
     public OmdbClient(String apiKey) {
         this.apiKey = apiKey;
@@ -18,10 +25,12 @@ public class OmdbClient {
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
+
+        this.objectMapper = new ObjectMapper();
     }
 
-    public String searchMovies(String searchTerm)
-            throws IOException, InterruptedException {
+    public List<SearchResult> searchMovies(String searchTerm)
+            throws JsonProcessingException, IOException, InterruptedException {
 
         String encodedSearchTerm =
                 URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
@@ -53,11 +62,11 @@ public class OmdbClient {
             );
         }
 
-        return response.body();
+        return parseSearchResults(response.body());
     }
 
-    public String getMovieById(String imdbId)
-            throws IOException, InterruptedException {
+    public Movie getMovieById(String imdbId)
+            throws JsonProcessingException, IOException, InterruptedException {
 
         String url = "https://www.omdbapi.com/?apikey="
                 + apiKey
@@ -85,6 +94,51 @@ public class OmdbClient {
             );
         }
 
-        return response.body();
+        return parseMovie(response.body());
+    }
+
+    private List<SearchResult> parseSearchResults(String responseBody)
+            throws JsonProcessingException {
+
+        JsonNode root = objectMapper.readTree(responseBody);
+
+        if (root.get("Response").asText().equals("False")) {
+            throw new IllegalStateException(
+                    root.get("Error").asText()
+            );
+        }
+
+        JsonNode searchResults = root.get("Search");
+
+        List<SearchResult> results = new ArrayList<>();
+
+        for (int i = 0; i < searchResults.size(); i++) {
+
+            JsonNode result = searchResults.get(i);
+
+            SearchResult searchResult = new SearchResult(
+                    result.get("Title").asText(),
+                    result.get("Year").asText(),
+                    result.get("imdbID").asText()
+            );
+
+            results.add(searchResult);
+        }
+
+        return results;
+    }
+
+    private Movie parseMovie(String responseBody)
+            throws JsonProcessingException {
+
+        JsonNode root = objectMapper.readTree(responseBody);
+
+        if (root.get("Response").asText().equals("False")) {
+            throw new IllegalStateException(
+                    root.get("Error").asText()
+            );
+        }
+
+        return objectMapper.readValue(responseBody, Movie.class);
     }
 }

@@ -1,11 +1,8 @@
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Main {
 
@@ -32,35 +29,8 @@ public class Main {
 
         try {
 
-            String responseBody = omdbClient.searchMovies(searchTerm);
-
-            ObjectMapper objectMapper = new ObjectMapper();
-
-            JsonNode root = objectMapper.readTree(responseBody);
-
-            if (root.get("Response").asText().equals("False")) {
-                System.out.println(
-                        "Error: " + root.get("Error").asText()
-                );
-                return;
-            }
-
-            JsonNode searchResults = root.get("Search");
-
-            List<SearchResult> results = new ArrayList<>();
-
-            for (int i = 0; i < searchResults.size(); i++) {
-
-                JsonNode result = searchResults.get(i);
-
-                SearchResult searchResult = new SearchResult(
-                        result.get("Title").asText(),
-                        result.get("Year").asText(),
-                        result.get("imdbID").asText()
-                );
-
-                results.add(searchResult);
-            }
+            List<SearchResult> results =
+                    omdbClient.searchMovies(searchTerm);
 
             System.out.println("\nSearch Results:");
 
@@ -98,24 +68,8 @@ public class Main {
 
             String imdbId = selectedResult.getImdbId();
 
-            String movieResponse =
-                    omdbClient.getMovieById(imdbId);
-
-            JsonNode movieRoot =
-                    objectMapper.readTree(movieResponse);
-
-            if (movieRoot.get("Response").asText().equals("False")) {
-                System.out.println(
-                        "Error: " + movieRoot.get("Error").asText()
-                );
-                return;
-            }
-
             Movie movie =
-                    objectMapper.readValue(
-                            movieResponse,
-                            Movie.class
-                    );
+                    omdbClient.getMovieById(imdbId);
 
             System.out.println("\nMovie Details:");
             System.out.println("Title: " + movie.getTitle());
@@ -128,6 +82,10 @@ public class Main {
         } catch (NumberFormatException e) {
 
             System.out.println("Please enter a valid number.");
+
+        } catch (IllegalStateException e) {
+
+            System.out.println("OMDb Error: " + e.getMessage());
 
         } catch (JsonProcessingException e) {
 
