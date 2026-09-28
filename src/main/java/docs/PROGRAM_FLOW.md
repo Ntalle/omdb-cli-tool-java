@@ -172,3 +172,4 @@ Program asks for a new movie search term.
 
 STEP 28
 New search begins from page 1.
+
