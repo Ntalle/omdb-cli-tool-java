@@ -248,8 +248,10 @@ public class Main {
                         "The request was interrupted."
                 );
             }
+
+        }
+
         scanner.close();
         
-        }
     }
 }
