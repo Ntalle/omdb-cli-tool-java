@@ -29,17 +29,24 @@ public class OmdbClient {
         this.objectMapper = new ObjectMapper();
     }
 
-    public List<SearchResult> searchMovies(String searchTerm)
+    public SearchResultPage searchMovies(
+            String searchTerm,
+            int page)
             throws JsonProcessingException, IOException, InterruptedException {
 
         String encodedSearchTerm =
-                URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
+                URLEncoder.encode(
+                        searchTerm,
+                        StandardCharsets.UTF_8
+                );
 
         String url = "https://www.omdbapi.com/?apikey="
                 + apiKey
                 + "&s="
                 + encodedSearchTerm
-                + "&type=movie";
+                + "&type=movie"
+                + "&page="
+                + page;
 
         URI uri = URI.create(url);
 
@@ -58,7 +65,8 @@ public class OmdbClient {
 
         if (statusCode < 200 || statusCode >= 300) {
             throw new IOException(
-                    "HTTP request failed. Status Code: " + statusCode
+                    "HTTP request failed. Status Code: "
+                            + statusCode
             );
         }
 
@@ -90,17 +98,19 @@ public class OmdbClient {
 
         if (statusCode < 200 || statusCode >= 300) {
             throw new IOException(
-                    "HTTP request failed. Status Code: " + statusCode
+                    "HTTP request failed. Status Code: "
+                            + statusCode
             );
         }
 
         return parseMovie(response.body());
     }
 
-    private List<SearchResult> parseSearchResults(String responseBody)
+    private SearchResultPage parseSearchResults(String responseBody)
             throws JsonProcessingException {
 
-        JsonNode root = objectMapper.readTree(responseBody);
+        JsonNode root =
+                objectMapper.readTree(responseBody);
 
         if (root.get("Response").asText().equals("False")) {
             throw new IllegalStateException(
@@ -108,30 +118,43 @@ public class OmdbClient {
             );
         }
 
-        JsonNode searchResults = root.get("Search");
+        JsonNode searchResults =
+                root.get("Search");
 
-        List<SearchResult> results = new ArrayList<>();
+        int totalResults =
+                Integer.parseInt(
+                        root.get("totalResults").asText()
+                );
+
+        List<SearchResult> results =
+                new ArrayList<>();
 
         for (int i = 0; i < searchResults.size(); i++) {
 
-            JsonNode result = searchResults.get(i);
+            JsonNode result =
+                    searchResults.get(i);
 
-            SearchResult searchResult = new SearchResult(
-                    result.get("Title").asText(),
-                    result.get("Year").asText(),
-                    result.get("imdbID").asText()
-            );
+            SearchResult searchResult =
+                    new SearchResult(
+                            result.get("Title").asText(),
+                            result.get("Year").asText(),
+                            result.get("imdbID").asText()
+                    );
 
             results.add(searchResult);
         }
 
-        return results;
+        return new SearchResultPage(
+                results,
+                totalResults
+        );
     }
 
     private Movie parseMovie(String responseBody)
             throws JsonProcessingException {
 
-        JsonNode root = objectMapper.readTree(responseBody);
+        JsonNode root =
+                objectMapper.readTree(responseBody);
 
         if (root.get("Response").asText().equals("False")) {
             throw new IllegalStateException(
@@ -139,6 +162,9 @@ public class OmdbClient {
             );
         }
 
-        return objectMapper.readValue(responseBody, Movie.class);
+        return objectMapper.readValue(
+                responseBody,
+                Movie.class
+        );
     }
 }
