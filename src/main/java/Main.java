@@ -18,31 +18,98 @@ public class Main {
 
         Scanner scanner = new Scanner(System.in);
 
-        System.out.print("Enter movie title: ");
-        String movieTitle = scanner.nextLine().trim();
+        System.out.print("Enter movie title to search: ");
+        String searchTerm = scanner.nextLine().trim();
+
+        if (searchTerm.isBlank()) {
+            System.out.println("Search term cannot be empty.");
+            return;
+        }
 
         OmdbClient omdbClient = new OmdbClient(apiKey);
 
         try {
 
-            String responseBody = omdbClient.searchMovie(movieTitle);
+            String responseBody = omdbClient.searchMovies(searchTerm);
 
             ObjectMapper objectMapper = new ObjectMapper();
 
             JsonNode root = objectMapper.readTree(responseBody);
 
             if (root.get("Response").asText().equals("False")) {
-                
-                System.out.println("Error: " + root.get("Error").asText());
+                System.out.println(
+                        "Error: " + root.get("Error").asText()
+                );
                 return;
             }
 
-            Movie movie = objectMapper.readValue(responseBody, Movie.class);
+            JsonNode searchResults = root.get("Search");
 
+            System.out.println("\nSearch Results:");
+
+            for (int i = 0; i < searchResults.size(); i++) {
+
+                JsonNode result = searchResults.get(i);
+
+                System.out.println(
+                        (i + 1)
+                                + ". "
+                                + result.get("Title").asText()
+                                + " ("
+                                + result.get("Year").asText()
+                                + ")"
+                );
+
+                System.out.println(
+                        "   IMDb ID: "
+                                + result.get("imdbID").asText()
+                );
+            }
+
+            System.out.print("\nChoose a movie number: ");
+            String choiceInput = scanner.nextLine().trim();
+
+            int choice = Integer.parseInt(choiceInput);
+
+            if (choice < 1 || choice > searchResults.size()) {
+                System.out.println("Invalid movie selection.");
+                return;
+            }
+
+            JsonNode selectedMovie =
+                    searchResults.get(choice - 1);
+
+            String imdbId =
+                    selectedMovie.get("imdbID").asText();
+
+            String movieResponse =
+                    omdbClient.getMovieById(imdbId);
+
+            JsonNode movieRoot =
+                    objectMapper.readTree(movieResponse);
+
+            if (movieRoot.get("Response").asText().equals("False")) {
+                System.out.println(
+                        "Error: " + movieRoot.get("Error").asText()
+                );
+                return;
+            }
+
+            Movie movie =
+                    objectMapper.readValue(
+                            movieResponse,
+                            Movie.class
+                    );
+
+            System.out.println("\nMovie Details:");
             System.out.println("Title: " + movie.getTitle());
             System.out.println("Year: " + movie.getYear());
             System.out.println("Director: " + movie.getDirector());
             System.out.println("IMDb Rating: " + movie.getImdbRating());
+
+        } catch (NumberFormatException e) {
+
+            System.out.println("Please enter a valid number.");
 
         } catch (JsonProcessingException e) {
 

@@ -20,16 +20,49 @@ public class OmdbClient {
                 .build();
     }
 
-    public String searchMovie(String movieTitle)
+    public String searchMovies(String searchTerm)
             throws IOException, InterruptedException {
 
-        String encodedTitle =
-                URLEncoder.encode(movieTitle, StandardCharsets.UTF_8);
+        String encodedSearchTerm =
+                URLEncoder.encode(searchTerm, StandardCharsets.UTF_8);
 
         String url = "https://www.omdbapi.com/?apikey="
                 + apiKey
-                + "&t="
-                + encodedTitle;
+                + "&s="
+                + encodedSearchTerm
+                + "&type=movie";
+
+        URI uri = URI.create(url);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uri)
+                .GET()
+                .build();
+
+        HttpResponse<String> response =
+                client.send(
+                        request,
+                        HttpResponse.BodyHandlers.ofString()
+                );
+
+        int statusCode = response.statusCode();
+
+        if (statusCode < 200 || statusCode >= 300) {
+            throw new IOException(
+                    "HTTP request failed. Status Code: " + statusCode
+            );
+        }
+
+        return response.body();
+    }
+
+    public String getMovieById(String imdbId)
+            throws IOException, InterruptedException {
+
+        String url = "https://www.omdbapi.com/?apikey="
+                + apiKey
+                + "&i="
+                + imdbId;
 
         URI uri = URI.create(url);
 
